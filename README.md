@@ -1,7 +1,7 @@
 # Desafio - Sistema de Gerenciamento de Tarefas (To-Do List)
 
 ## Crie um sistema que permite: 
-### Adicionar uma tarefa informando:
+### 1 - Adicionar uma tarefa informando:
 
 - Título (obrigatório)
 
@@ -9,15 +9,15 @@
 
 - Data de vencimento (no formato dd/MM/yyyy)
 
-- Listar todas as tarefas
+### 2 - Listar todas as tarefas
 
 - Exibir título, descrição e data
 
-- Marcar uma tarefa como concluída
+### 3 - Marcar uma tarefa como concluída
 
-- Remover uma tarefa
+### 4 - Remover uma tarefa
 
-- Sair do sistema
+### 5 - Sair do sistema
 
 
 ### Saída esperada
