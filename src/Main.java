@@ -1,4 +1,5 @@
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,121 +10,134 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        List<Tarefa> tarefas = new ArrayList<>();
-        boolean exit = TarefaUtils.sair();
-        int idDaTarefa = 0;
+        boolean exit = false;
+        List<Task> taskList = new ArrayList<>();
 
         do {
-            Menu.principal();
+            menu();
+            System.out.println("Escolha uma opção: ");
             int choice = scanner.nextInt();
 
             switch (choice) {
                 case 1:
-                    System.out.print("Digite o título da tarefa: \n");
+                    System.out.println("Digite o título da tarefa:");
                     scanner.nextLine();
                     String title = scanner.nextLine();
-                    System.out.print("Digite a descrição (opcional): \n");
+                    boolean valid = Validators.validTitle(title);
+                    if (!valid) break;
+                    System.out.println("Digite a descrição (opcional):");
                     String description = scanner.nextLine();
-                    System.out.print("Digite a data de vencimento (dd/MM/yyyy): \n");
+                    System.out.println("Digite a data de vencimento (dd/MM/yyyy):");
                     String date = scanner.nextLine();
-                    System.out.print("Tarefa adicionada com sucesso!");
-                    TarefaUtils.adicionarTarefa(new Tarefa(title, description, date), tarefas);
+                    try {
+                        Validators.validDate(date);
+                    } catch (DateTimeParseException exception) {
+                        System.err.println("Data inválida: " + exception.getMessage());
+                        break;
+                    }
+                    TaskService.adicionarTarefas(new Task(title, description, date), taskList);
+                    System.out.println("Tarefa adicionada!");
                     break;
                 case 2:
-                    System.out.println("TODAS TAREFAS: ");
-                    TarefaUtils.listarTarefas(tarefas);
+                    TaskService.listarTarefas(taskList);
                     break;
                 case 3:
-                    System.out.println("Digite o id da tarefa: ");
-                    idDaTarefa = scanner.nextInt();
-                    TarefaUtils.finalizarTarefa(idDaTarefa, tarefas);
-                    System.out.println("Tarefa marcada como concluída!");
+                    System.out.println("Digite o número da tarefa para concluir:");
+                    int id = scanner.nextInt();
+                    TaskService.finalizarTarefa(id, taskList);
+                    System.out.printf("Tarefa %d concluída!", id);
                     break;
                 case 4:
-                    System.out.println("Digite o id da tarefa a ser removida: ");
-                    idDaTarefa = scanner.nextInt();
-                    TarefaUtils.removerTarefa(idDaTarefa, tarefas);
-                    System.out.println("Tarefa removida!");
+                    System.out.println("Digite o número da tarefa para concluir:");
+                    int idRemove = scanner.nextInt();
+                    TaskService.removerTarefa(idRemove, taskList);
+                    System.out.printf("Tarefa %d removida!\n", idRemove);
                     break;
                 case 5:
                     exit = true;
+                    System.out.println("Saindo...");
                     break;
             }
-            idDaTarefa++;
-
         } while (!exit);
 
-        scanner.close();
 
+        scanner.close();
     }
 
-    public static class TarefaUtils {
-        public static void adicionarTarefa(Tarefa tarefa, List<Tarefa> tarefas) {
-            tarefas.add(tarefa);
+    public static void menu() {
+        System.out.println("=== Gerenciador de Tarefas ===\n" +
+                "\n" +
+                "1 - Adicionar tarefa\n" +
+                "2 - Listar tarefas\n" +
+                "3 - Marcar tarefa como concluída\n" +
+                "4 - Remover tarefa\n" +
+                "5 - Sair");
+    }
+
+    public static class Validators {
+
+        public static boolean validTitle(String title) {
+            if (title == null || title.isEmpty()) {
+                System.err.println("Título nulo ou vazio. Insira novamente!");
+                return false;
+            }
+            return true;
         }
 
-        public static void listarTarefas(List<Tarefa> tarefas) {
-            tarefas.forEach(System.out::println);
+        public static LocalDate validDate(String date) throws DateTimeParseException {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            return LocalDate.parse(date, dateTimeFormatter);
+        }
+    }
+
+    public static class TaskService {
+
+        //adicionar
+        public static void adicionarTarefas(Task task, List<Task> taskList) {
+            taskList.add(task);
+        }
+
+        //listar
+        public static void listarTarefas(List<Task> taskList) {
+            taskList.forEach(task -> System.out.println(task.toString()));
 
         }
 
-        public static void finalizarTarefa(int id, List<Tarefa> tarefas) {
-            for (Tarefa tarefa : tarefas) {
-                if (id == tarefa.getId()) {
-                    tarefa.setStatusDaTarefa(StatusDaTarefa.DONE);
+        //finalizar
+        public static void finalizarTarefa(int id, List<Task> taskList) {
+            for (Task task : taskList) {
+                if (task.getId() == id) {
+                    task.setTaskStatus(TaskStatus.DONE);
                 }
             }
+
         }
 
-        public static void removerTarefa(int id, List<Tarefa> tarefas) {
-            tarefas.removeIf(tarefa -> id == tarefa.getId());
-        }
-
-        public static boolean sair() {
-            return false;
-        }
-
-        public void validateDate(String date) {
-            try {
-                date = String.valueOf(LocalDateTime.parse(date));
-            } catch (DateTimeParseException e) {
-                throw new DateTimeParseException("Data inserida está errada!", e.getMessage(), e.getErrorIndex());
+        //remover
+        public static void removerTarefa(int id, List<Task> taskList) {
+            if (taskList != null) {
+                taskList.removeIf(task -> task.getId() == id);
             }
         }
-
     }
 
-    public static class Menu {
-        public static void principal() {
-            System.out.println(" " +
-                    "=== Gerenciador de Tarefas ===\n" +
-                    "        1. Adicionar tarefa\n" +
-                    "        2. Listar tarefas\n" +
-                    "        3. Marcar tarefa como concluída\n" +
-                    "        4. Remover tarefa\n" +
-                    "        5. Sair\n" +
-                    "        Escolha uma opção: \n");
+    public static class Task {
 
-
-        }
-    }
-
-    public static class Tarefa {
-        private int id = 0;
+        private int id;
         private String title;
         private String description;
-        private StatusDaTarefa statusDaTarefa;
         private String date;
+        private TaskStatus taskStatus;
+        private static int countId = 1;
 
-        public Tarefa(String title, String description, String date) {
-            id++;
+        public Task(String title, String description, String date) {
+            this.id = countId++;
             this.title = title;
             this.description = description;
-            this.statusDaTarefa = StatusDaTarefa.DOING;
             this.date = date;
+            this.taskStatus = TaskStatus.DOING;
         }
 
-        //getters and setters
         public int getId() {
             return id;
         }
@@ -148,14 +162,6 @@ public class Main {
             this.description = description;
         }
 
-        public StatusDaTarefa getStatusDaTarefa() {
-            return statusDaTarefa;
-        }
-
-        public void setStatusDaTarefa(StatusDaTarefa statusDaTarefa) {
-            this.statusDaTarefa = statusDaTarefa;
-        }
-
         public String getDate() {
             return date;
         }
@@ -164,19 +170,27 @@ public class Main {
             this.date = date;
         }
 
+        public TaskStatus getTaskStatus() {
+            return taskStatus;
+        }
+
+        public void setTaskStatus(TaskStatus taskStatus) {
+            this.taskStatus = taskStatus;
+        }
+
         @Override
         public String toString() {
-            return "Tarefa{" +
+            return "Task{" +
                     "id=" + id +
                     ", title='" + title + '\'' +
                     ", description='" + description + '\'' +
-                    ", statusDaTarefa=" + statusDaTarefa +
                     ", date='" + date + '\'' +
+                    ", taskStatus=" + taskStatus +
                     '}';
         }
     }
 
-    public enum StatusDaTarefa {
+    public enum TaskStatus {
         DOING, DONE
     }
 
